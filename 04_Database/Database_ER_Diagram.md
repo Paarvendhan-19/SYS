@@ -22,7 +22,7 @@ erDiagram
         uuid inventory_id FK
         uuid customer_id FK
         string idempotency_key UK "Unique duplicate prevention"
-        string status "RESERVED, PAYMENT_PENDING, CONFIRMED, SOLD, RELEASED"
+        string status "RESERVED, CONFIRMED, SOLD, RELEASED"
         timestamp expires_at
         timestamp created_at
     }
@@ -30,8 +30,8 @@ erDiagram
     ORDER {
         uuid order_id PK
         uuid customer_id FK
-        uuid reservation_id FK
-        string status "CREATED, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED"
+        uuid reservation_id FK_UK "UNIQUE for idempotent upsert"
+        string status "CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED"
         decimal total_amount
         timestamp created_at
     }
@@ -50,7 +50,7 @@ erDiagram
         uuid reservation_id FK_UK "UNIQUE - prevents double charge"
         string transaction_ref UK "External gateway reference"
         string idempotency_key UK "Client-generated dedup key"
-        string status "PENDING, SUCCESS, FAILED"
+        string status "PENDING, SUCCESS, FAILED, RECONCILIATION_NEEDED"
         timestamp processed_at
     }
 

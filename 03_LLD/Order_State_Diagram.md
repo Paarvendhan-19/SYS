@@ -1,10 +1,8 @@
 ```mermaid
 stateDiagram-v2
-    [*] --> CREATED : User initiates checkout
-    CREATED --> PAYMENT_PENDING : Awaiting Gateway Auth
+    [*] --> CONFIRMED : PaymentSucceededEvent via Kafka
     
     %% Success Path
-    PAYMENT_PENDING --> CONFIRMED : Payment Gateway Success
     CONFIRMED --> PROCESSING : Sent to Fulfillment
     PROCESSING --> SHIPPED : Package handed to carrier
     SHIPPED --> OUT_FOR_DELIVERY : Reached local hub
@@ -12,8 +10,7 @@ stateDiagram-v2
     DELIVERED --> [*]
 
     %% Failure & Recovery Paths
-    CREATED --> CANCELLED : Abandoned Checkout
-    PAYMENT_PENDING --> CANCELLED : Payment Failed / Hard Timeout
+    CONFIRMED --> CANCELLED : Payment Refunded / Admin Cancel
     
     %% Post-Cancellation Action
     CANCELLED --> RELEASE_INVENTORY : Trigger async compensation

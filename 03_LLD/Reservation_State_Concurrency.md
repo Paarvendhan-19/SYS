@@ -7,14 +7,12 @@
 stateDiagram-v2
     [*] --> AVAILABLE
     AVAILABLE --> RESERVED : Reserve Request (Redis DECR + DB Write)
-    RESERVED --> PAYMENT_PENDING : User proceeds to Checkout
-    PAYMENT_PENDING --> CONFIRMED : Payment Gateway Success
+    RESERVED --> CONFIRMED : Payment Gateway Success
     CONFIRMED --> SOLD : Order Fulfilled / Shipped
 
     %% Failure & Recovery Paths
     RESERVED --> RELEASED : Payment Failed / Cancelled
-    RESERVED --> RELEASED : Reservation Timeout (e.g., 5 mins)
-    PAYMENT_PENDING --> RELEASED : Payment Timeout / Failed
+    RESERVED --> RELEASED : Reservation Timeout / Expired
     
     RELEASED --> AVAILABLE : Stock Returned to Pool
 ```

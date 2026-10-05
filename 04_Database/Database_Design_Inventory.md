@@ -19,7 +19,7 @@
 | `reservation_id` | UUID (PK) | Unique reservation identifier |
 | `inventory_id` | UUID (FK) | Reference to inventory |
 | `customer_id` | UUID | User making the reservation |
-| `status` | VARCHAR | `RESERVED`, `PAYMENT_PENDING`, `CONFIRMED`, `SOLD`, `RELEASED` |
+| `status` | VARCHAR | `RESERVED`, `CONFIRMED`, `SOLD`, `RELEASED` |
 | `expires_at` | TIMESTAMP | Time when reservation expires |
 | `idempotency_key` | VARCHAR (UNIQUE) | Prevents duplicate requests |
 
@@ -45,7 +45,7 @@ To ensure atomicity, these operations must occur within a single database transa
 
 **Transaction C: Confirming a Reservation (Payment Success)**
 1. `BEGIN`
-2. `UPDATE INVENTORY_RESERVATION SET status = 'CONFIRMED' WHERE reservation_id = ? AND status = 'PAYMENT_PENDING'`.
+2. `UPDATE INVENTORY_RESERVATION SET status = 'CONFIRMED' WHERE reservation_id = ? AND status = 'RESERVED'`.
 3. If 0 rows updated (reservation expired/released), `ROLLBACK` and reject the payment.
 4. `COMMIT`.
 
@@ -66,7 +66,7 @@ To ensure atomicity, these operations must occur within a single database transa
 | `order_id` | UUID (FK) | Reference to the order |
 | `reservation_id` | UUID (FK, **UNIQUE**) | **Prevents a single reservation from being paid twice** |
 | `transaction_ref` | VARCHAR (UNIQUE) | External gateway reference / idempotency key |
-| `status` | VARCHAR | `PENDING`, `SUCCESS`, `FAILED` |
+| `status` | VARCHAR | `PENDING`, `SUCCESS`, `FAILED`, `RECONCILIATION_NEEDED` |
 | `processed_at` | TIMESTAMP | Time payment was processed |
 
 > **Critical Constraint:** The `UNIQUE` constraint on `reservation_id` is the ultimate defense against the "Browser Refresh" double-payment scenario. Even if a user generates a new idempotency key, a second successful payment for the same reservation is mathematically impossible.
@@ -105,7 +105,7 @@ To ensure atomicity, these operations must occur within a single database transa
 * **Duplicate Prevention:** The `idempotency_key` on the reservation table has a `UNIQUE` constraint. If a customer clicks "Buy Now" twice, the database strictly rejects the second `INSERT`, ensuring they only get one reservation.
 * **Double-Payment Prevention:** The `UNIQUE` constraint on `reservation_id` in the PAYMENT table ensures that even if a user refreshes the browser and generates a new idempotency key, a reservation can never be charged twice.
 * **Abandoned Carts:** The `expires_at` field allows an asynchronous background cron job (or TTL event) to safely execute **Transaction B**, sweeping up expired reservations and returning stock to the pool.
-* **Reservation Expiry Guard:** Before charging, the Payment Service validates that the reservation status is still `PAYMENT_PENDING` (not `RELEASED`). If the reservation has expired, the payment is rejected.
+* **Reservation Expiry Guard:** Before charging, the Payment Service validates that the reservation status is still `RESERVED` (not `RELEASED`). If the reservation has expired, the payment is rejected.
 
 ---
 
