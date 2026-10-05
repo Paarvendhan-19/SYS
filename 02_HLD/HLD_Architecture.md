@@ -11,7 +11,7 @@ graph TD
     G --> J[(Inventory DB: SQL / OCC)]
     H --> K{External Gateway}
     H --> L[Order Service]
-    L --> M[(Order DB: NoSQL)]
+    L --> M[(Order DB: PostgreSQL)]
     L -.->|Publish Event| N{{Message Broker: Kafka}}
     N -.->|Consume Event| O[Shipment & Notification Services]
 ```
